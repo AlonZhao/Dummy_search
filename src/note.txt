@@ -2,5 +2,37 @@ build search project step by step
 
 1. occ_grid
 	1.1 raycast
-	1.2 occ_map {env ns}<-raycast
+		func Raycast() class RayCaster{}
 		ref: A Fast Voxel Traversal Algorithm for Ray Tracing
+		url:https://zhuanlan.zhihu.com/p/126583341
+		url:https://blog.csdn.net/u011426016/article/details/103229303
+	1.2 occ_map {env ns}<-raycast.h
+		class OccMap{}
+			init(nh)为何 为了便于利用handle的参数服务器进行初始化
+			double para: resolution_ resolution_inv_ map_size origin_
+			int para :grid_size grid_multiply_z
+			ros para:
+				roshandle node 
+				sub global_cloud:globalCloudCallback sensor_msgs::PointCloud2ConstPtr &msg
+				timer (auto sub)visualization :globalOccVisCallback
+				pub global_occ_
+			map data: pcl::PointCloud<pcl::PointXYZ>::Ptr glb_cloud_ptr_
+				attention sensor_msgs pcl?
+			occ_grid: std::vector<bool> occupancy_buffer_;
+				
+			method(inline method .h): idToadress(x-y-z index to sum index)
+				position To index(x-y-z position to xyz index)
+				validcheck(pos/index)
+			method(.cpp):
+				setOccupancy(position):position->id->address-> vector.set()
+				globalOccVisCallback（timer-> pcl cloud(class member)-> ros sensor_msgs->publish）
+				globalCloudCallback( "/global_cloud" ros sensomsg r-> pcl->grid->pcl-->sub shut)
+				init
+				- 对类中成员进行初始化 node.param
+				
+				const 可以预防意外的变动，能提高程序的健壮性
+				mutable
+				incline修饰 短小的函数 直接.h中定义 解决一些频繁调用的小函数大量消耗栈空间（栈内存）的问题 栈空间就是指放置程序的局部数据（也就是函数内数据）的内存空间
+				std::vector[]访问
+			
+		

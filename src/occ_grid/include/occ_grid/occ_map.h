@@ -157,7 +157,7 @@ namespace env
 
   inline void OccMap::indexToPos(const Eigen::Vector3i &id, Eigen::Vector3d &pos) const
   {
-    pos = origin_;
+    pos = origin_;//half resolution
     pos(0) += (id(0) + 0.5) * resolution_;
     pos(1) += (id(1) + 0.5) * resolution_;
     pos(2) += (id(2) + 0.5) * resolution_;

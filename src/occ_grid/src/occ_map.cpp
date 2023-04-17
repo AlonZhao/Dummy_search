@@ -44,6 +44,8 @@ namespace env
   void OccMap::globalOccVisCallback(const ros::TimerEvent &e)
   {
     sensor_msgs::PointCloud2 cloud_msg;
+    //ros里面可以用pcl的库，但是往往需要对其转换，比如上面的pcl::toROSMsg(*cloud,output);把pcl里面的
+    //pcl::PointCloud<pcl::PointXYZ>转换成ros里面的sensor_msgs::PointCloud2这个类型
     pcl::toROSMsg(*glb_cloud_ptr_, cloud_msg);
     glb_occ_pub_.publish(cloud_msg);
   }
@@ -54,7 +56,7 @@ namespace env
       return;
 
     pcl::PointCloud<pcl::PointXYZ> global_cloud;
-    pcl::fromROSMsg(*msg, global_cloud);
+    pcl::fromROSMsg(*msg, global_cloud); //ros->pcl
     // ROS_ERROR_STREAM(", global_cloud.points.size(): " << global_cloud.points.size());
 
     if (global_cloud.points.size() == 0)
@@ -67,12 +69,13 @@ namespace env
       pt = global_cloud.points[i];
       p3d(0) = pt.x;
       p3d(1) = pt.y;
-      p3d(2) = pt.z;
+      p3d(2) = pt.z;//点云的点-->全都是占据栅格
       this->setOccupancy(p3d);
     }
-    is_global_map_valid_ = true;
+    is_global_map_valid_ = true;//设置完毕
 
-    glb_cloud_ptr_->points.clear();
+    glb_cloud_ptr_->points.clear();//删除点云
+    //遍历全部栅格
     for (int x = 0; x < grid_size_[0]; ++x)
       for (int y = 0; y < grid_size_[1]; ++y)
         for (int z = 0; z < grid_size_[2]; ++z)
@@ -80,17 +83,17 @@ namespace env
           if (occupancy_buffer_[idxToAddress(x, y, z)] == true)
           {
             Eigen::Vector3d pos;
-            indexToPos(x, y, z, pos);
+            indexToPos(x, y, z, pos);//更正点云信息
             glb_cloud_ptr_->points.emplace_back(pos[0], pos[1], pos[2]);
           }
         }
     glb_cloud_ptr_->width = glb_cloud_ptr_->points.size();
-    glb_cloud_ptr_->height = 1;
+    glb_cloud_ptr_->height = 1;//一维数组
     glb_cloud_ptr_->is_dense = true;
     glb_cloud_ptr_->header.frame_id = "map";
 
     cout << "glb occ set" << endl;
-    global_cloud_sub_.shutdown();
+    global_cloud_sub_.shutdown();//设置和存储完成 获得grid 以及修改后的pcl
   }
 
   void OccMap::init(const ros::NodeHandle &nh)
@@ -115,14 +118,14 @@ namespace env
 
     min_range_ = origin_;
     max_range_ = origin_ + map_size_;
-
+ 
     // initialize size of buffer
     grid_size_y_multiply_z_ = grid_size_(1) * grid_size_(2);
     int buffer_size = grid_size_(0) * grid_size_y_multiply_z_;
     occupancy_buffer_.resize(buffer_size);
     fill(occupancy_buffer_.begin(), occupancy_buffer_.end(), false);
 
-    //set x-y boundary occ
+    //set x-y boundary occ 设置围墙占据
     for (double cx = min_range_[0] + resolution_ / 2; cx <= max_range_[0] - resolution_ / 2; cx += resolution_)
       for (double cz = min_range_[2] + resolution_ / 2; cz <= max_range_[2] - resolution_ / 2; cz += resolution_)
       {
@@ -135,7 +138,7 @@ namespace env
         this->setOccupancy(Eigen::Vector3d(min_range_[0] + resolution_ / 2, cy, cz));
         this->setOccupancy(Eigen::Vector3d(max_range_[0] - resolution_ / 2, cy, cz));
       }
-    //set z-low boundary occ
+    //set z-low boundary occ 沿着z方向的xy下平面
     for (double cx = min_range_[0] + resolution_ / 2; cx <= max_range_[0] - resolution_ / 2; cx += resolution_)
       for (double cy = min_range_[1] + resolution_ / 2; cy <= max_range_[1] - resolution_ / 2; cy += resolution_)
       {
@@ -145,7 +148,8 @@ namespace env
     global_occ_vis_timer_ = node_.createTimer(ros::Duration(5), &OccMap::globalOccVisCallback, this);
     global_cloud_sub_ = node_.subscribe<sensor_msgs::PointCloud2>("/global_cloud", 1, &OccMap::globalCloudCallback, this);
     glb_occ_pub_ = node_.advertise<sensor_msgs::PointCloud2>("/occ_map/glb_map", 1);
-
+    //初始化点云地图指针
+    //工厂函数
     glb_cloud_ptr_ = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     cout << "map initialized: " << endl;
   }
