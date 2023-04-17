@@ -1,0 +1,6 @@
+build search project step by step
+
+1. occ_grid
+	1.1 raycast
+	1.2 occ_map {env ns}<-raycast
+		ref: A Fast Voxel Traversal Algorithm for Ray Tracing
