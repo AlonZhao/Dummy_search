@@ -1,6 +1,6 @@
 build search project step by step
 
-1. occ_grid
+1. occ_grid lib
 	1.1 raycast
 		func Raycast() class RayCaster{}
 		ref: A Fast Voxel Traversal Algorithm for Ray Tracing
@@ -17,7 +17,7 @@ build search project step by step
 				timer (auto sub)visualization :globalOccVisCallback
 				pub global_occ_
 			map data: pcl::PointCloud<pcl::PointXYZ>::Ptr glb_cloud_ptr_
-				attention sensor_msgs pcl?
+				attention sensor_msgs PointCloud2?
 			occ_grid: std::vector<bool> occupancy_buffer_;
 				
 			method(inline method .h): idToadress(x-y-z index to sum index)
@@ -35,4 +35,48 @@ build search project step by step
 				incline修饰 短小的函数 直接.h中定义 解决一些频繁调用的小函数大量消耗栈空间（栈内存）的问题 栈空间就是指放置程序的局部数据（也就是函数内数据）的内存空间
 				std::vector[]访问
 			
-		
+2.mockamap cpp 
+	2.1 map.  {mocka ns} <-map.h
+		class Map{}
+			struct BasicInfo{nh size scale sensor::cloud2* pcl::cloud*}
+			get info
+			MapGenerate()s;-<mapp.cpp definition
+	2.2 mockamap exe
+		optimizeMap(struct&)
+		 <remap from="mock_map" to="/random_forest/all_map"/>
+		 client->service(/pub_glb_obs pubGlbObs){pub.("mockamap")}
+	service机制：
+	建立服务端(接收请求，实现功能，返回应答)：ros::ServiceServer ser = nh.advertiseService("/pub_glb_obs", pubGlbObs);
+		回调函数pubGlbObs(self_msgs_and_srvs::GlbObsRcv::Request&  req, self_msgs_and_srvs::GlbObsRcv::Response& res) 自定义的srv类型，运行结束后返回res 当然这里没用；客户端直接在另一边client.call(srv)能够判断是否服务被调用，进行相应操作
+		这里的结构是服务器回调函数中继续宁发布地图
+		服务器作用 发送req才会有回调函数发布点云
+	2.3 random_forest_sensing exe
+		service
+		map_pcl_generate
+		ros::spin();等待
+关于mapgen 我们暂时使用mockamap里面的函数
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			 

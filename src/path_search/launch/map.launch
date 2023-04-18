@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+ <node pkg="mockamap" type="mockamap_node" name="mockamap_node" output="screen">
+ </node>
+  <!-- map generation -->
+  <!-- env for front-end compare-->
+
+</launch>

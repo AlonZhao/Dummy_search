@@ -81,7 +81,7 @@ namespace env
       }
       return true;
     }
-
+//
     typedef shared_ptr<OccMap> Ptr;
 
   private:

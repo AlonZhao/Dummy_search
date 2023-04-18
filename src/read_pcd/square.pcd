@@ -1,0 +1,11 @@
+# Exported by Aspose.3D
+VERSION .7
+FIELD x y z
+SIZE 4 4 4
+TYPE F F F
+COUNT 1 1 1
+WIDTH 0
+HEIGHT 1
+VIEWPOINT 0 0 0 1 0 0 0
+POINTS 0
+DATA ascii

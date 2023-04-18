@@ -1,0 +1,9 @@
+https://blog.csdn.net/idiot5lie/article/details/108099200
+https://blog.csdn.net/dreamcubeblock/article/details/113362527
+
+https://blog.csdn.net/weixin_45932617/article/details/103257958
+该功能包最初是想要把stl模型文件转为点云文件。2023-04-17
+尝试已经成功 大致过程是 solidwork： SDLPT->STL 
+                       SW+3D scan 插件 STL ->obj
+                       pcl_sample exe: obj->pcd
+                       pcl ros:pcd->plc->sensor_msg->pub
