@@ -1,0 +1,4 @@
+### snap -> clion instead of download mannually
+### open snap in terminal instead of shortcut
+### open your developing pkg's cmakelist  as a project
+### cmake in the bottom 

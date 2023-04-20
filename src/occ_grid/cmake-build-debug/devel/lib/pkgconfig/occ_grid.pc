@@ -1,0 +1,8 @@
+prefix=/home/alon/Dummy_search/src/occ_grid/cmake-build-debug/devel
+
+Name: occ_grid
+Description: Description of occ_grid
+Version: 0.0.0
+Cflags: -I/home/alon/Dummy_search/src/occ_grid/include
+Libs: -L${prefix}/lib -locc_grid
+Requires: roscpp std_msgs

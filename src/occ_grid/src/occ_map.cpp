@@ -100,12 +100,12 @@ namespace env
   {
     node_ = nh;
     /* ---------- param ---------- */
-    node_.param("occ_map/origin_x", origin_(0), -20.0);
-    node_.param("occ_map/origin_y", origin_(1), -20.0);
+    node_.param("occ_map/origin_x", origin_(0), -10.0);
+    node_.param("occ_map/origin_y", origin_(1), -10.0);
     node_.param("occ_map/origin_z", origin_(2), 0.0);
-    node_.param("occ_map/map_size_x", map_size_(0), 40.0);
-    node_.param("occ_map/map_size_y", map_size_(1), 40.0);
-    node_.param("occ_map/map_size_z", map_size_(2), 5.0);
+    node_.param("occ_map/map_size_x", map_size_(0), 20.0);
+    node_.param("occ_map/map_size_y", map_size_(1), 20.0);
+    node_.param("occ_map/map_size_z", map_size_(2), 3.0);
     node_.param("occ_map/resolution", resolution_, 0.2);
     resolution_inv_ = 1 / resolution_;
 
@@ -142,7 +142,7 @@ namespace env
     for (double cx = min_range_[0] + resolution_ / 2; cx <= max_range_[0] - resolution_ / 2; cx += resolution_)
       for (double cy = min_range_[1] + resolution_ / 2; cy <= max_range_[1] - resolution_ / 2; cy += resolution_)
       {
-        this->setOccupancy(Eigen::Vector3d(cx, cy, min_range_[2] + resolution_ / 2));
+       // this->setOccupancy(Eigen::Vector3d(cx, cy, min_range_[2] + resolution_ / 2));
       }
 
     global_occ_vis_timer_ = node_.createTimer(ros::Duration(5), &OccMap::globalOccVisCallback, this);

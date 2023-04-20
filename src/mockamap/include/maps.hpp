@@ -43,6 +43,7 @@ private:
   void maze2D();
   void randomMapGenerate();
   void Maze3DGen();
+  void NarrowMaze();
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr UnitRegular(double xwidth,double ywidth,double hwidth,double scale);
   pcl::PointCloud<pcl::PointXYZ>::Ptr Unit_tilt(double xwidth,double ywidth,double hwidth,double scale,double tilt_angle,double tilt_width,double tilt_start) ;

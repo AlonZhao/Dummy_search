@@ -8,6 +8,7 @@
 //接收目标点
 #include <geometry_msgs/PoseStamped.h>
 #include <path_search/rrt.h>
+#include <geometry_msgs/PoseStamped.h>
 //创建路径搜索类
 class PathSearcher
 {
@@ -42,17 +43,24 @@ class PathSearcher
        //创建显示发布话题
         visual_ptr->registe<visualization_msgs::Marker>("start");
         visual_ptr->registe<visualization_msgs::Marker>("goal");
-        
+   
         //搜索算法指针 初始化参数包括ros句柄和地图指针
         rrt_ptr_ = std::make_shared<path_search::RRT>(nh_,env_ptr);
+        rrt_ptr_->setVisualizer(visual_ptr);
         //路径搜索中定义的发布和接收
+        visual_ptr->registe<nav_msgs::Path>("rrt_final_path");
+        visual_ptr->registe<sensor_msgs::PointCloud2>("rrt_final_wpts");
+        
         rcv_glb_map_client_ = nh_.serviceClient<self_msgs_and_srvs::GlbObsRcv>("/please_pub_map");
-        //goal 是rviz的3d goal
+        //goal 是rviz的3d goal  绝对空间命名
         goal_sub_ = nh_.subscribe("/goal",1,&PathSearcher::goalCallback,this);
         //定时器请求地图
         execution_timer_ = nh_.createTimer(ros::Duration(1),&PathSearcher::executionCallback,this);
         
-        start_.setZero();
+       // start_.setZero();
+       start_<<-6.3101,-7.1391,1;
+        //规划策略选择
+        nh_.param("run_rrt",run_rrt_,true);
 
 
     }
@@ -63,7 +71,8 @@ class PathSearcher
         //eigen类型 = msgs类型
         goal_[0] = goal_msg->pose.position.x;
         goal_[1] = goal_msg->pose.position.y;
-        goal_[2] = goal_msg->pose.position.z;
+        goal_[2] = 1;
+        //goal_[2] = goal_msg->pose.position.z;
 
         //hint
         // /goal是3dgoal点击对应的数据，goal是相对空间话题名 
@@ -71,7 +80,29 @@ class PathSearcher
         ROS_INFO_STREAM("\n-----------------------------\ngoal rcved at " << goal_.transpose());
         visual_ptr->visualize_a_ball(start_, 0.3, "start", visualization::Color::pink);
         visual_ptr->visualize_a_ball(goal_, 0.3, "goal", visualization::Color::steelblue);
-
+        
+        if(run_rrt_)
+        {
+            
+            //路径搜索
+            bool rrt_result = rrt_ptr_->plan(start_, goal_);
+            if (rrt_result)
+            {
+                vector<vector<Eigen::Vector3d>> routes = rrt_ptr_->getAllPaths();
+                visual_ptr->visualize_path_list(routes, "rrt_paths", visualization::blue);
+                vector<Eigen::Vector3d> final_path = rrt_ptr_->getPath();
+                visual_ptr->visualize_path(final_path,"rrt_final_path");
+                visual_ptr->visualize_pointcloud(final_path,"rrt_final_wpts");
+                vector<std::pair<double, double>>slns = rrt_ptr_->getSolutions();
+                ROS_INFO_STREAM("[RRT] final path len: " << slns.back().first);
+            }
+            else
+            {
+                ROS_INFO("Plan Failed");
+            }
+        }
+        
+        start_ = goal_;//
 
     } 
     //定时请求地图

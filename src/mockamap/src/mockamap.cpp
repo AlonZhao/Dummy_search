@@ -98,21 +98,21 @@ main(int argc, char** argv)
 
   nh_private.param("seed", seed, 4546);
   nh_private.param("update_freq", update_freq, 1.0);
-  nh_private.param("resolution", scale, 0.38);
+  nh_private.param("resolution", scale, 0.1);
   nh_private.param("x_length", sizeX, 100);
   nh_private.param("y_length", sizeY, 100);
   nh_private.param("z_length", sizeZ, 10);
 
   nh_private.param("type", type, 1);
   //离散珊格尺度 size个格子=右边：连续尺度size实际长度
-  scale = 1 / scale;
+  scale = 1 / scale;//10
   sizeX = sizeX * scale;
   sizeY = sizeY * scale;
   sizeZ = sizeZ * scale;
 
   mocka::Maps::BasicInfo info;
   info.nh_private = &nh_private;
-  info.sizeX      = sizeX;
+  info.sizeX      = sizeX;//int
   info.sizeY      = sizeY;
   info.sizeZ      = sizeZ;
   info.seed       = seed;

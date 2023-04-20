@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <launch>
+
 <include file="$(find path_search)/launch/rviz.launch"/>
-<node pkg="path_search" type="path_search" name="path_search" output="screen"/>
+    <node pkg="path_search" type="path_search" name="path_search" output="screen"/>
+    
 
 </launch>

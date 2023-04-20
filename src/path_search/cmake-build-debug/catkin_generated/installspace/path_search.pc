@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: path_search
+Description: Description of path_search
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lpath_search
+Requires: occ_grid

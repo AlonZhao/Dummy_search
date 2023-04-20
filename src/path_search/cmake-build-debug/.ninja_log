@@ -1,0 +1,4 @@
+# ninja log v5
+1	988	1681955078733811251	CMakeFiles/path_search.dir/src/kdtree.c.o	e4dd456cdb728a91
+0	8305	1681955086045770238	CMakeFiles/path_search.dir/src/path_searcher.cpp.o	24fd06598892e544
+8307	8593	1681955086337768600	devel/lib/path_search/path_search	af5208a20e80d096

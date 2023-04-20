@@ -779,7 +779,7 @@ void Maps::IregNarrow()
 
   std::default_random_engine eng(info.seed);//？
 
-  double _resolution = 1 / info.scale;
+  double _resolution = 1 / info.scale;//0.1
 
   double _x_l = -info.sizeX / (2 * info.scale);
   double _x_h = info.sizeX / (2 * info.scale);
@@ -930,6 +930,43 @@ double tilt_width = 1.5;
   pcl2ros();
 }
 
+
+void Maps::NarrowMaze()
+{
+  
+//pcl的成员变量 如果点云是无序的，height=1，width是=点云的长度
+  info.cloud->width    = info.cloud->points.size();
+  info.cloud->height   = 1;
+  info.cloud->is_dense = true;
+  
+  pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle1 (new pcl::PointCloud<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle11 (new pcl::PointCloud<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle2 (new pcl::PointCloud<pcl::PointXYZ> ());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle22 (new pcl::PointCloud<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle3 (new pcl::PointCloud<pcl::PointXYZ> ());
+   pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle33 (new pcl::PointCloud<pcl::PointXYZ> ());
+
+  obstacle1 = UnitRegular(7,3,3,info.scale); 
+  obstacle2 = UnitRegular(7,8,3,info.scale); 
+  obstacle3 = UnitRegular(2,5,3,info.scale); 
+  //开始摆放立方体
+
+  Eigen::Affine3f transform_cloud = Eigen::Affine3f::Identity();
+
+  transform_cloud.translation() << 0,-8.5,0;
+  pcl::transformPointCloud (*obstacle1, *obstacle11, transform_cloud);
+  *info.cloud = *info.cloud + *obstacle11;
+
+  transform_cloud.translation() << 0,-1.5,0;
+  pcl::transformPointCloud (*obstacle2, *obstacle22, transform_cloud);
+  *info.cloud = *info.cloud + *obstacle22;
+    transform_cloud.translation() << -5,-7,0;
+  pcl::transformPointCloud (*obstacle3, *obstacle33, transform_cloud);
+  *info.cloud = *info.cloud + *obstacle33;
+  pcl2ros();
+  
+}
+
 Maps::BasicInfo
 Maps::getInfo() const
 {
@@ -968,6 +1005,9 @@ Maps::generate(int type)
       break;
     case 5:
       IregNarrow();
+    break;
+    case 6:
+    NarrowMaze();
     break;
   }
 }
