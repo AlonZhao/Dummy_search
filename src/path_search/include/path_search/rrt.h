@@ -368,5 +368,5 @@ namespace path_search
     vector<Eigen::Vector3d> preserved_samples_;
   };
 
-} // namespace path_plan
+} // namespace path_search
 #endif
