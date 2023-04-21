@@ -11,6 +11,9 @@ Panels:
         - /Mapping1/global_occ1
         - /Mapping1/global_occ1/Autocompute Value Bounds1
         - /Planning1
+        - /Planning1/informed_set1
+        - /Planning1/RRT*_Path1
+        - /Planning1/RRT*_wpts1
       Splitter Ratio: 0.6735293865203857
     Tree Height: 583
   - Class: rviz/Selection
@@ -170,7 +173,7 @@ Visualization Manager:
           Marker Topic: /path_search/informed_set
           Name: informed_set
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -329,7 +332,7 @@ Visualization Manager:
           Color: 239; 41; 41
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -344,12 +347,12 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
           Color: 0; 85; 255
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
@@ -368,7 +371,7 @@ Visualization Manager:
           Shaft Length: 0.10000000149011612
           Topic: /path_search/brrt_final_path
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -381,7 +384,7 @@ Visualization Manager:
           Color: 0; 85; 255
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -396,12 +399,12 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
           Color: 85; 85; 255
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
@@ -420,7 +423,7 @@ Visualization Manager:
           Shaft Length: 0.10000000149011612
           Topic: /path_search/brrt_star_final_path
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -433,7 +436,7 @@ Visualization Manager:
           Color: 85; 85; 255
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -448,7 +451,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
       Enabled: true
       Name: Planning
   Enabled: true
@@ -480,7 +483,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 23.496288299560547
+      Distance: 24.832477569580078
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -496,9 +499,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2547966241836548
+      Pitch: 0.8347970247268677
       Target Frame: map
-      Yaw: 3.8039896488189697
+      Yaw: 3.5189905166625977
     Saved: ~
 Window Geometry:
   Displays:

@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <path_search/rrt.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <path_search/rrt_star.h>
 //创建路径搜索类
 class PathSearcher
 {
@@ -24,10 +25,10 @@ class PathSearcher
     std::shared_ptr<visualization::Visualization> visual_ptr;
     //路径搜索：算法
     std::shared_ptr<path_search::RRT> rrt_ptr_;
-
+    std::shared_ptr<path_search::RRTStar> rrt_star_ptr_;
     //路径搜索：全局目标
     Eigen::Vector3d start_,goal_;
-    bool run_rrt_;
+    bool run_rrt_, run_rrt_star_;
     
     public:
 
@@ -43,14 +44,20 @@ class PathSearcher
        //创建显示发布话题
         visual_ptr->registe<visualization_msgs::Marker>("start");
         visual_ptr->registe<visualization_msgs::Marker>("goal");
-   
+    //-----------------rrt------------------------//
         //搜索算法指针 初始化参数包括ros句柄和地图指针
         rrt_ptr_ = std::make_shared<path_search::RRT>(nh_,env_ptr);
         rrt_ptr_->setVisualizer(visual_ptr);
         //路径搜索中定义的发布和接收
         visual_ptr->registe<nav_msgs::Path>("rrt_final_path");
         visual_ptr->registe<sensor_msgs::PointCloud2>("rrt_final_wpts");
-        
+    //------------------rrt-------------------------//
+        rrt_star_ptr_ = std::make_shared<path_search::RRTStar>(nh_, env_ptr);
+        rrt_star_ptr_->setVisualizer(visual_ptr);
+        visual_ptr->registe<nav_msgs::Path>("rrt_star_final_path");
+        visual_ptr->registe<sensor_msgs::PointCloud2>("rrt_star_final_wpts");
+        visual_ptr->registe<visualization_msgs::MarkerArray>("rrt_star_paths");
+
         rcv_glb_map_client_ = nh_.serviceClient<self_msgs_and_srvs::GlbObsRcv>("/please_pub_map");
         //goal 是rviz的3d goal  绝对空间命名
         goal_sub_ = nh_.subscribe("/goal",1,&PathSearcher::goalCallback,this);
@@ -61,6 +68,7 @@ class PathSearcher
        start_<<-6.3101,-7.1391,1;
         //规划策略选择
         nh_.param("run_rrt",run_rrt_,true);
+        nh_.param("run_rrt_star",run_rrt_star_,true);
 
 
     }
@@ -89,7 +97,7 @@ class PathSearcher
             if (rrt_result)
             {
                 vector<vector<Eigen::Vector3d>> routes = rrt_ptr_->getAllPaths();
-                visual_ptr->visualize_path_list(routes, "rrt_paths", visualization::blue);
+                //visual_ptr->visualize_path_list(routes, "rrt_paths", visualization::blue);
                 vector<Eigen::Vector3d> final_path = rrt_ptr_->getPath();
                 visual_ptr->visualize_path(final_path,"rrt_final_path");
                 visual_ptr->visualize_pointcloud(final_path,"rrt_final_wpts");
@@ -98,9 +106,31 @@ class PathSearcher
             }
             else
             {
+                ROS_INFO("Plan Failed1");
+            }
+        }
+
+                if(run_rrt_star_)
+        {
+            
+            //路径搜索
+            bool rrt_star_result = rrt_star_ptr_->plan(start_, goal_);
+            if (rrt_star_result)
+            {
+                vector<vector<Eigen::Vector3d>> routes = rrt_star_ptr_->getAllPaths();
+                visual_ptr->visualize_path_list(routes, "rrt_star_paths", visualization::blue);
+                vector<Eigen::Vector3d> final_path = rrt_star_ptr_->getPath();
+                visual_ptr->visualize_path(final_path,"rrt_star_final_path");
+                visual_ptr->visualize_pointcloud(final_path,"rrt_star_final_wpts");
+                vector<std::pair<double, double>>slns = rrt_star_ptr_->getSolutions();
+                ROS_INFO_STREAM("[RRT*] final path len: " << slns.back().first);
+            }
+            else
+            {
                 ROS_INFO("Plan Failed");
             }
         }
+
         
         start_ = goal_;//
 

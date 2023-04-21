@@ -280,7 +280,7 @@ namespace path_search
             {//第一次找到路径
               first_path_use_time_ = (ros::Time::now() - rrt_start_time).toSec();
             }
-            goal_found = true;//更新父节点信息
+            goal_found = true;//更新父节点信息（basic RRT没有这个过程）
             changeNodeParent(goal_node_, new_node, dist_to_goal);
             vector<Eigen::Vector3d> curr_best_path;
             fillPath(goal_node_, curr_best_path);//存在
