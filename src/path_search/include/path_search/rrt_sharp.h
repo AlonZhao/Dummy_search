@@ -18,8 +18,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
-#ifndef RRT_STAR_H
-#define RRT_STAR_H
+#ifndef RRT_SHARP_H
+#define RRT_SHARP_H
 
 #include "occ_grid/occ_map.h"
 #include "visualization/visualization.hpp"
@@ -30,27 +30,28 @@ OF SUCH DAMAGE.
 #include <ros/ros.h>
 #include <utility>
 #include <queue>
+#include <algorithm>
 
 namespace path_search
 {
-  class RRTStar
+  class RRTSharp
   {
   public:
-    RRTStar(){};
-    RRTStar(const ros::NodeHandle &nh, const env::OccMap::Ptr &mapPtr) : nh_(nh), map_ptr_(mapPtr)
+    RRTSharp(){};
+    RRTSharp(const ros::NodeHandle &nh, const env::OccMap::Ptr &mapPtr) : nh_(nh), map_ptr_(mapPtr)
     {
-      nh_.param("RRT_Star/steer_length", steer_length_, 2.0);
-      nh_.param("RRT_Star/search_radius", search_radius_, 6.0);
-      nh_.param("RRT_Star/search_time", search_time_, 0.1);
-      nh_.param("RRT_Star/max_tree_node_nums", max_tree_node_nums_, 1000);
-      nh_.param("RRT_Star/use_informed_sampling", use_informed_sampling_, true);
-      nh_.param("RRT_Star/use_GUILD_sampling", use_GUILD_sampling_, true);
-      ROS_WARN_STREAM("[RRT*] param: steer_length: " << steer_length_);
-      ROS_WARN_STREAM("[RRT*] param: search_radius: " << search_radius_);
-      ROS_WARN_STREAM("[RRT*] param: search_time: " << search_time_);
-      ROS_WARN_STREAM("[RRT*] param: max_tree_node_nums: " << max_tree_node_nums_);
-      ROS_WARN_STREAM("[RRT*] param: use_informed_sampling: " << use_informed_sampling_);
-      ROS_WARN_STREAM("[RRT*] param: use_GUILD_sampling: " << use_GUILD_sampling_);
+      nh_.param("RRT_Sharp/steer_length", steer_length_, 0.0);
+      nh_.param("RRT_Sharp/search_radius", search_radius_, 0.0);
+      nh_.param("RRT_Sharp/search_time", search_time_, 0.0);
+      nh_.param("RRT_Sharp/max_tree_node_nums", max_tree_node_nums_, 0);
+      nh_.param("RRT_Sharp/use_informed_sampling", use_informed_sampling_, true);
+      nh_.param("RRT_Sharp/use_GUILD_sampling", use_GUILD_sampling_, true);
+      ROS_WARN_STREAM("[RRT#] param: steer_length: " << steer_length_);
+      ROS_WARN_STREAM("[RRT#] param: search_radius: " << search_radius_);
+      ROS_WARN_STREAM("[RRT#] param: search_time: " << search_time_);
+      ROS_WARN_STREAM("[RRT#] param: max_tree_node_nums: " << max_tree_node_nums_);
+      ROS_WARN_STREAM("[RRT#] param: use_informed_sampling: " << use_informed_sampling_);
+      ROS_WARN_STREAM("[RRT#] param: use_GUILD_sampling: " << use_GUILD_sampling_);
 
       sampler_.setSamplingRange(mapPtr->getOrigin(), mapPtr->getMapSize());
 
@@ -61,38 +62,40 @@ namespace path_search
         nodes_pool_[i] = new TreeNode;
       }
     }
-    ~RRTStar(){};
+    ~RRTSharp(){};
 
     bool plan(const Eigen::Vector3d &s, const Eigen::Vector3d &g)
     {
       reset();
       if (!map_ptr_->isStateValid(s))
       {
-        ROS_ERROR("[RRT*]: Start pos collide or out of bound");
+        ROS_ERROR("[RRT#]: Start pos collide or out of bound");
         return false;
       }
       if (!map_ptr_->isStateValid(g))
       {
-        ROS_ERROR("[RRT*]: Goal pos collide or out of bound");
+        ROS_ERROR("[RRT#]: Goal pos collide or out of bound");
         return false;
       }
       /* construct start and goal nodes */
       start_node_ = nodes_pool_[1];
       start_node_->x = s;
       start_node_->cost_from_start = 0.0;
+      start_node_->heuristic_to_goal = calDist(s, g);
       goal_node_ = nodes_pool_[0];
       goal_node_->x = g;
       goal_node_->cost_from_start = DBL_MAX; // important
-      valid_tree_node_nums_ = 2;             // put start and goal in tree
+      goal_node_->heuristic_to_goal = 0.0;
+      valid_tree_node_nums_ = 2; // put start and goal in tree
 
-      ROS_INFO("[RRT*]: RRT starts planning a path");
+      ROS_INFO("[RRT#]: RRT starts planning a path");
       sampler_.reset(); // !important
       if (use_informed_sampling_)
       {
         calInformedSet(10000000000.0, s, g, scale_, trans_, rot_);
         sampler_.setInformedTransRot(trans_, rot_);
       }
-      return rrt_star(s, g);
+      return rrt_sharp(s, g);
     }
 
     vector<Eigen::Vector3d> getPath()
@@ -120,6 +123,7 @@ namespace path_search
     ros::NodeHandle nh_;
 
     BiasSampler sampler_;
+
     // for informed sampling
     Eigen::Vector3d trans_, scale_;
     Eigen::Matrix3d rot_;
@@ -179,7 +183,7 @@ namespace path_search
     }
 
     RRTNode3DPtr addTreeNode(RRTNode3DPtr &parent, const Eigen::Vector3d &state,
-                             const double &cost_from_start, const double &cost_from_parent)
+                             const double &cost_from_start, const double &cost_from_parent, const double &heuristic_to_goal)
     {
       RRTNode3DPtr new_node_ptr = nodes_pool_[valid_tree_node_nums_];
       valid_tree_node_nums_++;
@@ -188,6 +192,8 @@ namespace path_search
       new_node_ptr->x = state;
       new_node_ptr->cost_from_start = cost_from_start;
       new_node_ptr->cost_from_parent = cost_from_parent;
+      new_node_ptr->heuristic_to_goal = heuristic_to_goal;
+      new_node_ptr->g_plus_h = cost_from_start + heuristic_to_goal;
       return new_node_ptr;
     }
 
@@ -198,6 +204,7 @@ namespace path_search
       node->parent = parent;
       node->cost_from_parent = cost_from_parent;
       node->cost_from_start = parent->cost_from_start + cost_from_parent;
+      node->g_plus_h = node->cost_from_start + node->heuristic_to_goal;
       parent->children.push_back(node);
 
       // for all its descedants, change the cost_from_start and tau_from_start;
@@ -211,6 +218,7 @@ namespace path_search
         for (const auto &leafptr : descendant->children)
         {
           leafptr->cost_from_start = leafptr->cost_from_parent + descendant->cost_from_start;
+          leafptr->g_plus_h = leafptr->cost_from_start + leafptr->heuristic_to_goal;
           Q.push(leafptr);
         }
       }
@@ -229,7 +237,7 @@ namespace path_search
       std::reverse(std::begin(path), std::end(path));
     }
 
-    bool rrt_star(const Eigen::Vector3d &s, const Eigen::Vector3d &g)
+    bool rrt_sharp(const Eigen::Vector3d &s, const Eigen::Vector3d &g)
     {
       ros::Time rrt_start_time = ros::Time::now();
       bool goal_found = false;
@@ -320,17 +328,16 @@ namespace path_search
         }
 
         /* parent found within radius, then add a node to rrt and kd_tree */
-        // sample-rejection
+        // sample rejection
         double dist_to_goal = calDist(x_new, goal_node_->x);
-        // if (min_dist_from_start + dist_to_goal >= goal_node_->cost_from_start)
-        // {
-        //   // ROS_WARN("parent found but sample rejected");
-        //   continue;
-        // }
-
+        if (min_dist_from_start + dist_to_goal >= goal_node_->cost_from_start)
+        {
+          // ROS_WARN("parent found but sample rejected");
+          continue;
+        }
         /* 1.1 add the randomly sampled node to rrt_tree */
         RRTNode3DPtr new_node(nullptr);
-        new_node = addTreeNode(min_node, x_new, min_dist_from_start, cost_from_p);
+        new_node = addTreeNode(min_node, x_new, min_dist_from_start, cost_from_p, dist_to_goal);
 
         /* 1.2 add the randomly sampled node to kd_tree */
         kd_insert3(kd_tree, x_new[0], x_new[1], x_new[2], new_node);
@@ -340,9 +347,7 @@ namespace path_search
         if (dist_to_goal <= search_radius_)
         {
           bool is_connected2goal = map_ptr_->isSegmentValid(x_new, goal_node_->x);
-          // this test can be omitted if sample-rejction is applied
-          bool is_better_path = goal_node_->cost_from_start > dist_to_goal + new_node->cost_from_start;
-          if (is_connected2goal && is_better_path)
+          if (is_connected2goal && goal_node_->cost_from_start > dist_to_goal + new_node->cost_from_start) // a better path found
           {
             if (!goal_found)
             {
@@ -354,8 +359,8 @@ namespace path_search
             fillPath(goal_node_, curr_best_path);
             path_list_.emplace_back(curr_best_path);
             solution_cost_time_pair_list_.emplace_back(goal_node_->cost_from_start, (ros::Time::now() - rrt_start_time).toSec());
-            // vis_ptr_->visualize_path(curr_best_path, "rrt_star_final_path");
-            // vis_ptr_->visualize_pointcloud(curr_best_path, "rrt_star_final_wpts");
+            // vis_ptr_->visualize_path(curr_best_path, "rrt_sharp_final_path");
+            // vis_ptr_->visualize_pointcloud(curr_best_path, "rrt_sharp_final_wpts");
             if (use_informed_sampling_)
             {
               scale_[0] = goal_node_->cost_from_start / 2.0;
@@ -381,12 +386,12 @@ namespace path_search
         }
 
         /* 3.rewire */
+        std::priority_queue<RRTNode3DPtr, RRTNode3DPtrVector, RRTNodeComparator> rewire_queue;
         for (auto &curr_node : neighbour_nodes.nearing_nodes)
         {
-          // new_node->x = x_new
           double dist_to_potential_child = calDist(new_node->x, curr_node.node_ptr->x);
           bool not_consistent = new_node->cost_from_start + dist_to_potential_child < curr_node.node_ptr->cost_from_start ? 1 : 0;
-          bool promising = new_node->cost_from_start + dist_to_potential_child + calDist(curr_node.node_ptr->x, goal_node_->x) < goal_node_->cost_from_start ? 1 : 0;
+          bool promising = new_node->cost_from_start + dist_to_potential_child + curr_node.node_ptr->heuristic_to_goal < goal_node_->cost_from_start ? 1 : 0;
           if (not_consistent && promising)
           {
             bool connected(false);
@@ -394,20 +399,20 @@ namespace path_search
               connected = curr_node.is_valid;
             else
               connected = map_ptr_->isSegmentValid(new_node->x, curr_node.node_ptr->x);
-
             // If we can get to a node via the sampled_node faster than via it's existing parent then change the parent
             if (connected)
             {
               double best_cost_before_rewire = goal_node_->cost_from_start;
               changeNodeParent(curr_node.node_ptr, new_node, dist_to_potential_child);
+              rewire_queue.emplace(curr_node.node_ptr);
               if (best_cost_before_rewire > goal_node_->cost_from_start)
               {
                 vector<Eigen::Vector3d> curr_best_path;
                 fillPath(goal_node_, curr_best_path);
                 path_list_.emplace_back(curr_best_path);
                 solution_cost_time_pair_list_.emplace_back(goal_node_->cost_from_start, (ros::Time::now() - rrt_start_time).toSec());
-                // vis_ptr_->visualize_path(curr_best_path, "rrt_star_final_path");
-                // vis_ptr_->visualize_pointcloud(curr_best_path, "rrt_star_final_wpts");
+                // vis_ptr_->visualize_path(curr_best_path, "rrt_sharp_final_path");
+                // vis_ptr_->visualize_pointcloud(curr_best_path, "rrt_sharp_final_wpts");
                 if (use_informed_sampling_)
                 {
                   scale_[0] = goal_node_->cost_from_start / 2.0;
@@ -434,6 +439,53 @@ namespace path_search
           }
           /* go to the next entry */
         }
+        while (!rewire_queue.empty())
+        {
+          RRTNode3DPtr curr_rewire_node = rewire_queue.top();
+          std::make_heap(const_cast<RRTNode3DPtr *>(&rewire_queue.top()),
+                         const_cast<RRTNode3DPtr *>(&rewire_queue.top()) + rewire_queue.size(), RRTNodeComparator());
+          // re-order the queue every time before pop a node, since the key may change during changeNodeParent()
+          rewire_queue.pop();
+
+          struct kdres *nbr_set;
+          nbr_set = kd_nearest_range3(kd_tree, curr_rewire_node->x[0], curr_rewire_node->x[1], curr_rewire_node->x[2], search_radius_);
+          if (nbr_set == nullptr)
+          {
+            ROS_ERROR("bkwd kd range query error");
+            break;
+          }
+          while (!kd_res_end(nbr_set))
+          {
+            RRTNode3DPtr curr_node = (RRTNode3DPtr)kd_res_item_data(nbr_set);
+
+            double dist_to_potential_child = calDist(curr_rewire_node->x, curr_node->x);
+            bool not_consistent = curr_rewire_node->cost_from_start + dist_to_potential_child < curr_node->cost_from_start ? 1 : 0;
+            bool promising = curr_rewire_node->cost_from_start + dist_to_potential_child + curr_node->heuristic_to_goal < goal_node_->cost_from_start ? 1 : 0;
+            if (not_consistent && promising) // If we can get to a node via the curr_rewire_node faster than via it's existing parent then change the parent
+            {
+              bool connected = map_ptr_->isSegmentValid(curr_rewire_node->x, curr_node->x);
+              // If we can get to a node via the sampled_node faster than via it's existing parent then change the parent
+              if (connected)
+              {
+                double best_cost_before_rewire = goal_node_->cost_from_start;
+                changeNodeParent(curr_node, curr_rewire_node, dist_to_potential_child);
+                rewire_queue.emplace(curr_node);
+                if (best_cost_before_rewire > goal_node_->cost_from_start)
+                {
+                  vector<Eigen::Vector3d> curr_best_path;
+                  fillPath(goal_node_, curr_best_path);
+                  path_list_.emplace_back(curr_best_path);
+                  solution_cost_time_pair_list_.emplace_back(goal_node_->cost_from_start, (ros::Time::now() - rrt_start_time).toSec());
+                  vis_ptr_->visualize_path(curr_best_path, "rrt_sharp_final_path");
+                  vis_ptr_->visualize_pointcloud(curr_best_path, "rrt_sharp_final_wpts");
+                }
+              }
+            }
+            kd_res_next(nbr_set); // go to next in kd tree range query result
+          }
+          kd_res_free(nbr_set); // reset kd tree range query
+        }
+
         /* end of rewire */
       }
       /* end of sample once */
@@ -451,21 +503,21 @@ namespace path_search
         balls.push_back(node_p);
       }
       vis_ptr_->visualize_balls(balls, "tree_vertice", visualization::Color::blue, 1.0);
-      vis_ptr_->visualize_pairline(edges, "tree_edges", visualization::Color::green, 0.1);
+      vis_ptr_->visualize_pairline(edges, "tree_edges", visualization::Color::red, 0.1);
 
       if (goal_found)
       {
         final_path_use_time_ = (ros::Time::now() - rrt_start_time).toSec();
         fillPath(goal_node_, final_path_);
-        ROS_INFO_STREAM("[RRT*]: first_path_use_time: " << first_path_use_time_ << ", length: " << solution_cost_time_pair_list_.front().first);
+        ROS_INFO_STREAM("[RRT#]: first_path_use_time: " << first_path_use_time_ << ", length: " << solution_cost_time_pair_list_.front().first);
       }
       else if (valid_tree_node_nums_ == max_tree_node_nums_)
       {
-        ROS_ERROR_STREAM("[RRT*]: NOT CONNECTED TO GOAL after " << max_tree_node_nums_ << " nodes added to rrt-tree");
+        ROS_ERROR_STREAM("[RRT#]: NOT CONNECTED TO GOAL after " << max_tree_node_nums_ << " nodes added to rrt-tree");
       }
       else
       {
-        ROS_ERROR_STREAM("[RRT*]: NOT CONNECTED TO GOAL after " << (ros::Time::now() - rrt_start_time).toSec() << " seconds");
+        ROS_ERROR_STREAM("[RRT#]: NOT CONNECTED TO GOAL after " << (ros::Time::now() - rrt_start_time).toSec() << " seconds");
       }
       return goal_found;
     }
