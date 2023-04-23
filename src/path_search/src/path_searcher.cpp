@@ -13,6 +13,8 @@
 #include <path_search/brrt_star.h>
 #include <path_search/brrt.h>
 #include <path_search/rrt_sharp.h>
+
+#include<path_search/astar.h>
 //创建路径搜索类
 class PathSearcher
 {
@@ -32,10 +34,11 @@ class PathSearcher
     std::shared_ptr<path_search::RRTSharp> rrt_sharp_ptr_;
     std::shared_ptr<path_search::BRRT> brrt_ptr_;
     std::shared_ptr<path_search::BRRTStar> brrt_star_ptr_;
+    std::shared_ptr<fast_planner::Astar> astar_ptr_;
 
     //路径搜索：全局目标
     Eigen::Vector3d start_,goal_;
-    bool run_rrt_, run_rrt_star_,run_rrt_sharp_,run_brrt_,run_brrt_star_;
+    bool run_rrt_, run_rrt_star_,run_rrt_sharp_,run_brrt_,run_brrt_star_,run_astar_;
     
     public:
 
@@ -83,6 +86,17 @@ class PathSearcher
         visual_ptr->registe<nav_msgs::Path>("brrt_star_final_path");
         visual_ptr->registe<sensor_msgs::PointCloud2>("brrt_star_final_wpts");
         visual_ptr->registe<visualization_msgs::MarkerArray>("brrt_star_paths");
+//--------------------astar---------------
+        astar_ptr_.reset(new fast_planner::Astar);
+        astar_ptr_->setParam(nh_);
+        astar_ptr_->setEnvironment(env_ptr);
+        astar_ptr_->init();
+
+        astar_ptr_->setVisualizer(visual_ptr);
+        visual_ptr->registe<nav_msgs::Path>("astar_final_path");
+        visual_ptr->registe<sensor_msgs::PointCloud2>("astar_final_wpts");
+        visual_ptr->registe<visualization_msgs::MarkerArray>("astar_paths");
+
 
         rcv_glb_map_client_ = nh_.serviceClient<self_msgs_and_srvs::GlbObsRcv>("/please_pub_map");
         //goal 是rviz的3d goal  绝对空间命名
@@ -98,6 +112,7 @@ class PathSearcher
         nh_.param("run_rrt_sharp",run_rrt_sharp_,true);
         nh_.param("run_brrt_star",run_brrt_star_,true);
         nh_.param("run_brrt",run_brrt_,true);
+        nh_.param("run_astar",run_astar_,true);
  
 
     }
@@ -222,6 +237,28 @@ class PathSearcher
             }
         }
 
+        if(run_astar_)
+        {
+            
+            //路径搜索
+            int astar_result = astar_ptr_->search(start_, goal_,false,0);
+            //std::cout<<" ### "<<astar_result<<std::endl;
+            
+            if (astar_result==1)//{ REACH_END = 1, NO_PATH = 2 };
+            {
+                std::vector<Eigen::Vector3d> final_path = astar_ptr_->getPath();
+                //visual_ptr->visualize_path_list(routes, "astar_paths", visualization::blue);
+           
+                visual_ptr->visualize_path(final_path,"astar_final_path");
+                visual_ptr->visualize_pointcloud(final_path,"astar_final_wpts");
+                //vector<std::pair<double, double>>slns = astar_ptr_->getSolutions();
+               // ROS_INFO_STREAM("[RRT] final path len: " << slns.back().first);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Fail  == "<<astar_result);
+            }
+        }
         
 
         

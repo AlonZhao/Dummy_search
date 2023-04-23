@@ -2,3 +2,11 @@
 ### open snap in terminal instead of shortcut
 ### open your developing pkg's cmakelist  as a project
 ### cmake in the bottom 
+
+git push origin main 
+kex_exchange_identification: Connection closed by remote host
+fatal: 无法读取远程仓库。
+
+请确认您有正确的访问权限并且仓库存在。
+
+网络不好 热点就可以了

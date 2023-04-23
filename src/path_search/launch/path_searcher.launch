@@ -68,6 +68,13 @@
     <param name="BRRT_Star/max_tree_node_nums" value="$(arg max_tree_node_nums)" type="int"/>
     <param name="BRRT_Star/use_informed_sampling" value="$(arg use_informed_sampling)" type="bool"/>
     
+
+    <param name="Astar/lambda_heu" value="5.0" type="double"/>
+    <param name="Astar/resolution_astar" value="0.2" type="double"/>
+    <param name="Astar/time_resolution" value="0.8" type="double"/>
+    <param name="Astar/margin" value="0.2" type="double"/>
+    <param name="Astar/allocate_num" value="100000" type="int"/>
+
 </node>
     
 
